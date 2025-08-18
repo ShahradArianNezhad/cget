@@ -9,7 +9,17 @@
 
 
 
-int main(char argc,char** argv){
+int main(int argc,char** argv){
+
+
+    if(argc<4){
+        printf("Incorrect usage:%s <hostname> <path> <outputfilename>\n",argv[0]);
+        return 0;
+    }
+
+
+
+
 
     char res[2048];
     char request[256];
@@ -40,7 +50,7 @@ int main(char argc,char** argv){
         return -2;
     }
 
-    int fd = open("meeeeez", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    int fd = open(argv[3], O_WRONLY | O_CREAT | O_TRUNC, 0644);
 
 
 
