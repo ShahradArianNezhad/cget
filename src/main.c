@@ -4,7 +4,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include "../include/ip.h"
-#define PORT 443
+#define PORT 80
 
 
 
@@ -32,14 +32,25 @@ int main(char argc,char** argv){
     }
 
 
-    if(send(socketfd,"GET / HTTP/1.1\r\nHost: www.google.com\r\n\r\n",46,0)<0){
+
+    char request[256];
+
+    int request_len = snprintf(request,sizeof(request),
+    "GET / HTTP/1.1\r\n"
+    "Host: %s\r\n\r\n"
+    "Connection:close\r\n"
+    "\r\n",
+    argv[1]);
+
+    if(send(socketfd,request,request_len,0)<0){
         printf("send failed\n");
     }
 
 
-    char* res[2048];
-    recv(socketfd,res,2048,0);
+    char res[2048];
+    while(recv(socketfd,res,2048,0)>0){
     printf("%s\n",res);
+    }
 
     return 0;
 }
