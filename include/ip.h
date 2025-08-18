@@ -1,0 +1,1 @@
+char* getIp(char* address);
