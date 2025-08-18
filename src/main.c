@@ -37,10 +37,11 @@ int main(char argc,char** argv){
 
     int request_len = snprintf(request,sizeof(request),
     "GET / HTTP/1.1\r\n"
-    "Host: %s\r\n\r\n"
+    "Host: %s\r\n"
     "Connection:close\r\n"
     "\r\n",
     argv[1]);
+
 
     if(send(socketfd,request,request_len,0)<0){
         printf("send failed\n");
