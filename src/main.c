@@ -3,6 +3,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include "../include/ip.h"
 #define PORT 80
 
@@ -10,9 +11,17 @@
 
 int main(char argc,char** argv){
 
+    char res[2048];
+    char request[256];
     struct sockaddr_in server_addr;
     int socketfd;
 
+    int request_len = snprintf(request,sizeof(request),
+    "GET %s HTTP/1.1\r\n"
+    "Host: %s\r\n"
+    "Connection:close\r\n"
+    "\r\n",
+    argv[2],argv[1]);
 
 
 
@@ -31,26 +40,34 @@ int main(char argc,char** argv){
         return -2;
     }
 
+    int fd = open("meeeeez", O_WRONLY | O_CREAT | O_TRUNC, 0644);
 
 
-    char request[256];
-
-    int request_len = snprintf(request,sizeof(request),
-    "GET / HTTP/1.1\r\n"
-    "Host: %s\r\n"
-    "Connection:close\r\n"
-    "\r\n",
-    argv[1]);
 
 
+
+    // printf("%s",request);
     if(send(socketfd,request,request_len,0)<0){
         printf("send failed\n");
+        return -3;
     }
 
+    int bytes_recv;
+    int hit_header=0;
+    char* temp;
+    while((bytes_recv=recv(socketfd,res,2048,0))>0){
+        if(hit_header==1){
+            write(fd,res,bytes_recv);
+            continue;
+        }
+        if((temp = strstr(res,"\r\n\r\n"))!=NULL){
+            hit_header=1;
+            int header_size = temp-res+4;
+            write(fd,temp,bytes_recv-header_size);
+            // printf("%s\n",temp);
+            continue;
+        }
 
-    char res[2048];
-    while(recv(socketfd,res,2048,0)>0){
-    printf("%s\n",res);
     }
 
     return 0;
