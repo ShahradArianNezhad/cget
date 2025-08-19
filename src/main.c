@@ -8,6 +8,7 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include "../include/ip.h"
+#define HEADER_BUFFER_SIZE 8192  
 #define PORT 443
 
 
@@ -45,7 +46,7 @@ int main(int argc,char** argv){
     }
 
 
-    char res[2048];
+    char *HEADER_BUFFER = malloc(HEADER_BUFFER_SIZE);
     char request[256];
     struct sockaddr_in server_addr;
     int socketfd;
@@ -111,12 +112,13 @@ int main(int argc,char** argv){
 
     int bytes_recv;
     char* temp;
-    bytes_recv=SSL_read(ssl,res,2048);
-    printf("%s",res);
-    if((temp = strstr(res,"\r\n\r\n"))!=NULL){
-        int header_size = temp-res+4;
+    bytes_recv=SSL_read(ssl,HEADER_BUFFER,HEADER_BUFFER_SIZE-1);
+    HEADER_BUFFER[HEADER_BUFFER_SIZE]='\0';
+    printf("%s",HEADER_BUFFER);
+    if((temp = strstr(HEADER_BUFFER,"\r\n\r\n"))!=NULL){
+        int header_size = temp-HEADER_BUFFER+4;
         write(fd,temp,bytes_recv-header_size);
-        char* cont_len_ptr = strstr(res,"content-length:");
+        char* cont_len_ptr = strstr(HEADER_BUFFER,"content-length:");
         if(cont_len_ptr!=NULL){
             // skip the 'content-lenght:'
             cont_len_ptr+=16;
