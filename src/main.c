@@ -5,8 +5,30 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <pthread.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
 #include "../include/ip.h"
-#define PORT 80
+#define PORT 443
+
+
+SSL_CTX* create_ssl_ctx(){
+    SSL_CTX *ctx;
+
+    SSL_library_init();
+    OpenSSL_add_all_algorithms();
+    SSL_load_error_strings();
+    ctx = SSL_CTX_new(TLS_client_method());
+    if(!ctx){
+        ERR_print_errors_fp(stderr);
+        return NULL;
+    }
+    SSL_CTX_set_verify(ctx,SSL_VERIFY_PEER,NULL);
+    SSL_CTX_load_verify_locations(ctx,NULL,"/etc/ssl/certs");
+
+    return ctx;
+}
+
+
 
 
 
@@ -23,6 +45,16 @@ int main(int argc,char** argv){
     char request[256];
     struct sockaddr_in server_addr;
     int socketfd;
+    SSL *ssl;
+    SSL_CTX *ctx;
+
+    ctx = create_ssl_ctx();
+    if(!ctx){
+        printf("SSL CONTEXT CREATION FAILED");
+        return -5;
+    }
+
+
 
     int request_len = snprintf(request,sizeof(request),
     "GET %s HTTP/1.1\r\n"
@@ -40,6 +72,7 @@ int main(int argc,char** argv){
 
     if((socketfd = socket(AF_INET, SOCK_STREAM, 0))<0){
         printf("SOCKET CREATION FAILED\n");
+        SSL_CTX_free(ctx);
         return -1;
     }
     
@@ -50,42 +83,55 @@ int main(int argc,char** argv){
 
     if(connect(socketfd,(struct sockaddr*)&server_addr,sizeof(server_addr))<0){
         printf("CONNECTION FAILED\n");
+        SSL_CTX_free(ctx);
         return -2;
     }
+
+    ssl = SSL_new(ctx);
+    SSL_set_fd(ssl,socketfd);
+    SSL_set_tlsext_host_name(ssl, argv[1]);
+    SSL_connect(ssl);
+
+    printf("Connected to %s with %s\n", argv[1], SSL_get_cipher(ssl));
 
 
     int fd = open(argv[3], O_WRONLY | O_CREAT | O_TRUNC, 0644);
 
 
-    if(send(socketfd,request,request_len,0)<0){
+    if(SSL_write(ssl,request,request_len)<0){
         printf("send failed\n");
         return -3;
     }
 
     int bytes_recv;
     char* temp;
-    bytes_recv=recv(socketfd,res,2048,0);
+    bytes_recv=SSL_read(ssl,res,2048);
     printf("%s",res);
     if((temp = strstr(res,"\r\n\r\n"))!=NULL){
         int header_size = temp-res+4;
         write(fd,temp,bytes_recv-header_size);
         char* cont_len_ptr = strstr(res,"content-length:");
+        if(cont_len_ptr!=NULL){
+            // skip the 'content-lenght:'
+            cont_len_ptr+=16;
 
-        // skip the 'content-lenght:'
-        cont_len_ptr+=16;
+            // content lenght in bytes
+            char cont_len[15];
+            int int_cont_len;
 
-        // content lenght in bytes
-        char cont_len[15];
-        int int_cont_len;
-
-        for(int i=0;i<50;i++){
-            if((*(cont_len_ptr+i))=='\r'&&(*(cont_len_ptr+i+1))=='\n'){
-                break;
+            for(int i=0;i<50;i++){
+                if((*(cont_len_ptr+i))=='\r'&&(*(cont_len_ptr+i+1))=='\n'){
+                    break;
+                }
+                cont_len[i]=*(cont_len_ptr+i);
             }
-            cont_len[i]=*(cont_len_ptr+i);
         }
     }
 
+    SSL_shutdown(ssl);
+    SSL_free(ssl);
     close(socketfd);
+    SSL_CTX_free(ctx);
+    close(fd);
     return 0;
 }
