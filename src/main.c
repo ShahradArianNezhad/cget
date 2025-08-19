@@ -47,6 +47,11 @@ int main(int argc,char** argv){
 
 
     char *HEADER_BUFFER = malloc(HEADER_BUFFER_SIZE);
+    if(!HEADER_BUFFER){
+        printf("MEMORY ALLOCATION FAILED");
+        return -1;
+    }
+
     char request[256];
     struct sockaddr_in server_addr;
     int socketfd;
@@ -79,8 +84,13 @@ int main(int argc,char** argv){
         SSL_CTX_free(ctx);
         return -1;
     }
+    char* server_ip=getIp(argv[1]);
+    if(!server_ip){
+        printf("DNS RESOLOUTION FAILED: make sure you dont include http:// or www. in your hostname");
+        return -2;
+    }
     
-    inet_pton(AF_INET, getIp(argv[1]), &server_addr.sin_addr);
+    inet_pton(AF_INET, server_ip, &server_addr.sin_addr);
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(PORT);
 
@@ -114,27 +124,28 @@ int main(int argc,char** argv){
     char* temp;
     bytes_recv=SSL_read(ssl,HEADER_BUFFER,HEADER_BUFFER_SIZE-1);
     HEADER_BUFFER[HEADER_BUFFER_SIZE]='\0';
-    printf("%s",HEADER_BUFFER);
-    if((temp = strstr(HEADER_BUFFER,"\r\n\r\n"))!=NULL){
-        int header_size = temp-HEADER_BUFFER+4;
-        write(fd,temp,bytes_recv-header_size);
-        char* cont_len_ptr = strstr(HEADER_BUFFER,"content-length:");
-        if(cont_len_ptr!=NULL){
-            // skip the 'content-lenght:'
-            cont_len_ptr+=16;
 
-            // content lenght in bytes
-            char cont_len[15];
-            int int_cont_len;
+    // printf("%s",HEADER_BUFFER);
+    // if((temp = strstr(HEADER_BUFFER,"\r\n\r\n"))!=NULL){
+    //     int header_size = temp-HEADER_BUFFER+4;
+    //     write(fd,temp,bytes_recv-header_size);
+    //     char* cont_len_ptr = strstr(HEADER_BUFFER,"content-length:");
+    //     if(cont_len_ptr!=NULL){
+    //         // skip the 'content-lenght:'
+    //         cont_len_ptr+=16;
 
-            for(int i=0;i<50;i++){
-                if((*(cont_len_ptr+i))=='\r'&&(*(cont_len_ptr+i+1))=='\n'){
-                    break;
-                }
-                cont_len[i]=*(cont_len_ptr+i);
-            }
-        }
-    }
+    //         // content lenght in bytes
+    //         char cont_len[15];
+    //         int int_cont_len;
+
+    //         for(int i=0;i<50;i++){
+    //             if((*(cont_len_ptr+i))=='\r'&&(*(cont_len_ptr+i+1))=='\n'){
+    //                 break;
+    //             }
+    //             cont_len[i]=*(cont_len_ptr+i);
+    //         }
+    //     }
+    // }
 
     SSL_shutdown(ssl);
     SSL_free(ssl);
