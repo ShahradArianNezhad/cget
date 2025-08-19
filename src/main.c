@@ -26,11 +26,15 @@ int main(int argc,char** argv){
 
     int request_len = snprintf(request,sizeof(request),
     "GET %s HTTP/1.1\r\n"
+    "User-Agent: cdow/1.0\r\n"
+    "Accept: */*\r\n"
+    "Accept-Encoding: gzip, deflate, br\r\n"
     "Host: %s\r\n"
-    "Connection:close\r\n"
+    "Connection: keep-alive\r\n"
     // "Range: bytes=0-60\r\n"
     "\r\n",
     argv[2],argv[1]);
+
 
 
 
@@ -61,6 +65,7 @@ int main(int argc,char** argv){
     int bytes_recv;
     char* temp;
     bytes_recv=recv(socketfd,res,2048,0);
+    printf("%s",res);
     if((temp = strstr(res,"\r\n\r\n"))!=NULL){
         int header_size = temp-res+4;
         write(fd,temp,bytes_recv-header_size);
@@ -79,9 +84,8 @@ int main(int argc,char** argv){
             }
             cont_len[i]=*(cont_len_ptr+i);
         }
-        sscanf(cont_len,"%d",&int_cont_len);
-        printf("%d\n",int_cont_len);
-        
     }
+
+    close(socketfd);
     return 0;
 }
