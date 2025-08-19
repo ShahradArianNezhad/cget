@@ -40,7 +40,7 @@ int main(int argc,char** argv){
 
 
     if(argc<4){
-        printf("Incorrect usage:%s <hostname> <path> <outputfilename>\n",argv[0]);
+        printf("Incorrect usage:%s <hostname(WITHOUT www. OR HTTPS://)> <path> <outputfilename>\n",argv[0]);
         return 0;
     }
 
