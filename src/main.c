@@ -47,12 +47,13 @@ int main(int argc,char** argv){
 
 
     char *HEADER_BUFFER = malloc(HEADER_BUFFER_SIZE);
+    HEADER_BUFFER[HEADER_BUFFER_SIZE]='\0';
     if(!HEADER_BUFFER){
         printf("MEMORY ALLOCATION FAILED");
         return -1;
     }
 
-    char request[256];
+
     struct sockaddr_in server_addr;
     int socketfd;
     SSL *ssl;
@@ -63,15 +64,13 @@ int main(int argc,char** argv){
         printf("SSL CONTEXT CREATION FAILED");
         return -5;
     }
-
-
-
+    char request[256];
     int request_len = snprintf(request,sizeof(request),
     "GET %s HTTP/1.1\r\n"
     "User-Agent: cdow/1.0\r\n"
     "Accept: */*\r\n"
     "Host: %s\r\n"
-    "Connection: keep-alive\r\n"
+    "Connection: close\r\n"
     // "Range: bytes=0-60\r\n"
     "\r\n",
     argv[2],argv[1]);
@@ -86,7 +85,7 @@ int main(int argc,char** argv){
     }
     char* server_ip=getIp(argv[1]);
     if(!server_ip){
-        printf("DNS RESOLOUTION FAILED: make sure you dont include http:// or www. in your hostname");
+        printf("DNS RESOLOUTION FAILED: make sure you dont include http:// or www. in your hostname\n");
         return -2;
     }
     
@@ -112,7 +111,7 @@ int main(int argc,char** argv){
     printf("Connected to %s with %s\n", argv[1], SSL_get_cipher(ssl));
 
 
-    int fd = open(argv[3], O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    // int fd = open(argv[3], O_WRONLY | O_CREAT | O_TRUNC, 0644);
 
 
     if(SSL_write(ssl,request,request_len)<0){
@@ -120,10 +119,10 @@ int main(int argc,char** argv){
         return -3;
     }
 
-    int bytes_recv;
-    char* temp;
-    bytes_recv=SSL_read(ssl,HEADER_BUFFER,HEADER_BUFFER_SIZE-1);
-    HEADER_BUFFER[HEADER_BUFFER_SIZE]='\0';
+
+    int bytes_recv=SSL_read(ssl,HEADER_BUFFER,HEADER_BUFFER_SIZE-1);
+    printf("%s",HEADER_BUFFER);
+
 
     // printf("%s",HEADER_BUFFER);
     // if((temp = strstr(HEADER_BUFFER,"\r\n\r\n"))!=NULL){
@@ -151,6 +150,6 @@ int main(int argc,char** argv){
     SSL_free(ssl);
     close(socketfd);
     SSL_CTX_free(ctx);
-    close(fd);
+    // close(fd);
     return 0;
 }
