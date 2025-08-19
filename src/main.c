@@ -22,6 +22,10 @@ SSL_CTX* create_ssl_ctx(){
         ERR_print_errors_fp(stderr);
         return NULL;
     }
+    SSL_CTX_set_min_proto_version(ctx, TLS1_VERSION);
+    SSL_CTX_set_max_proto_version(ctx, TLS1_3_VERSION);
+
+
     SSL_CTX_set_verify(ctx,SSL_VERIFY_PEER,NULL);
     SSL_CTX_load_verify_locations(ctx,NULL,"/etc/ssl/certs");
 
@@ -60,7 +64,6 @@ int main(int argc,char** argv){
     "GET %s HTTP/1.1\r\n"
     "User-Agent: cdow/1.0\r\n"
     "Accept: */*\r\n"
-    "Accept-Encoding: gzip, deflate, br\r\n"
     "Host: %s\r\n"
     "Connection: keep-alive\r\n"
     // "Range: bytes=0-60\r\n"
@@ -90,7 +93,10 @@ int main(int argc,char** argv){
     ssl = SSL_new(ctx);
     SSL_set_fd(ssl,socketfd);
     SSL_set_tlsext_host_name(ssl, argv[1]);
-    SSL_connect(ssl);
+    int status =SSL_connect(ssl);
+    if(status<0){
+        ERR_print_errors_fp(stderr);
+    }
 
     printf("Connected to %s with %s\n", argv[1], SSL_get_cipher(ssl));
 
