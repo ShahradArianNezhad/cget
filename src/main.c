@@ -7,33 +7,9 @@
 #include <pthread.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
-#include "../include/ip.h"
+#include "../include/network.h"
 #define HEADER_BUFFER_SIZE 8192  
 #define PORT 443
-
-
-SSL_CTX* create_ssl_ctx(){
-    SSL_CTX *ctx;
-
-    SSL_library_init();
-    OpenSSL_add_all_algorithms();
-    SSL_load_error_strings();
-    ctx = SSL_CTX_new(TLS_client_method());
-    if(!ctx){
-        ERR_print_errors_fp(stderr);
-        return NULL;
-    }
-    SSL_CTX_set_min_proto_version(ctx, TLS1_VERSION);
-    SSL_CTX_set_max_proto_version(ctx, TLS1_3_VERSION);
-
-
-    SSL_CTX_set_verify(ctx,SSL_VERIFY_PEER,NULL);
-    SSL_CTX_load_verify_locations(ctx,NULL,"/etc/ssl/certs");
-
-    return ctx;
-}
-
-
 
 
 
@@ -47,7 +23,7 @@ int main(int argc,char** argv){
 
 
     char *HEADER_BUFFER = malloc(HEADER_BUFFER_SIZE);
-    HEADER_BUFFER[HEADER_BUFFER_SIZE]='\0';
+    HEADER_BUFFER[HEADER_BUFFER_SIZE-1]='\0';
     if(!HEADER_BUFFER){
         printf("MEMORY ALLOCATION FAILED");
         return -1;
@@ -119,32 +95,16 @@ int main(int argc,char** argv){
         return -3;
     }
 
+    int bytes_recv;
+    bytes_recv=SSL_read(ssl,HEADER_BUFFER,HEADER_BUFFER_SIZE-1);
+    HEADER_BUFFER[bytes_recv]='\0';
 
-    int bytes_recv=SSL_read(ssl,HEADER_BUFFER,HEADER_BUFFER_SIZE-1);
-    printf("%s",HEADER_BUFFER);
+    http_res response;
+    handle_headers(HEADER_BUFFER,&response);
+    printf("%d\n",response.content_len);
+    printf("%d\n",response.http_status);
+    printf("%s\n",response.content_type);
 
-
-    // printf("%s",HEADER_BUFFER);
-    // if((temp = strstr(HEADER_BUFFER,"\r\n\r\n"))!=NULL){
-    //     int header_size = temp-HEADER_BUFFER+4;
-    //     write(fd,temp,bytes_recv-header_size);
-    //     char* cont_len_ptr = strstr(HEADER_BUFFER,"content-length:");
-    //     if(cont_len_ptr!=NULL){
-    //         // skip the 'content-lenght:'
-    //         cont_len_ptr+=16;
-
-    //         // content lenght in bytes
-    //         char cont_len[15];
-    //         int int_cont_len;
-
-    //         for(int i=0;i<50;i++){
-    //             if((*(cont_len_ptr+i))=='\r'&&(*(cont_len_ptr+i+1))=='\n'){
-    //                 break;
-    //             }
-    //             cont_len[i]=*(cont_len_ptr+i);
-    //         }
-    //     }
-    // }
 
     SSL_shutdown(ssl);
     SSL_free(ssl);
