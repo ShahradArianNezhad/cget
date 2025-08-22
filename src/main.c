@@ -158,7 +158,7 @@ int main(int argc,char** argv){
     // char* content = malloc(response.content_len*sizeof(char));
 
 
-    SSL_write(ssl,request,request_len);
+    // SSL_write(ssl,request,request_len);
     char* BUFFER = malloc(BUFFER_SIZE);
 
     while((bytes_recv=SSL_read(ssl,BUFFER,BUFFER_SIZE-1))>0){
@@ -173,6 +173,6 @@ int main(int argc,char** argv){
     SSL_free(ssl);
     close(socketfd);
     SSL_CTX_free(ctx);
-    // close(fd);
+    close(filefd);
     return 0;
 }
