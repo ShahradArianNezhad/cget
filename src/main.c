@@ -9,7 +9,7 @@
 #include <openssl/err.h>
 #include "../include/network.h"
 #define HEADER_BUFFER_SIZE 8192
-#define BUFFER_SIZE 1048576
+#define BUFFER_SIZE 1048576*100
 #define PORT 443
 
 
@@ -177,7 +177,6 @@ int main(int argc,char** argv){
     while((bytes_recv=SSL_read(ssl,BUFFER,BUFFER_SIZE))>0){
         write(filefd,BUFFER,bytes_recv);
         total_bytes_recv+=bytes_recv;
-        printf("%.0f%% downloaded\n",(total_bytes_recv/response.content_len)*100);
     }
     
 
