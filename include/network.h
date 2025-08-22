@@ -8,6 +8,6 @@ typedef struct{
 
 SSL_CTX* create_ssl_ctx();
 
-int handle_headers(char* buff,http_res* res);
+char* handle_headers(char* buff,http_res* res);
 
 

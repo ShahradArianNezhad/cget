@@ -56,7 +56,7 @@ SSL_CTX* create_ssl_ctx(){
 
 
 
-int handle_headers(char* buff,http_res* res){
+char* handle_headers(char* buff,http_res* res){
 
 
 
@@ -111,7 +111,7 @@ int handle_headers(char* buff,http_res* res){
     }
     window_start++;
     window_end = window_start;
-    while(*window_end!=';'){
+    while(*window_end!='\r'){
         window_end++;
     }
 
@@ -125,6 +125,10 @@ int handle_headers(char* buff,http_res* res){
     res->content_type[window_end-window_start+1]='\0';
 
 
-    return http_status;
+    char *header_end = strstr(buff,"\r\n\r\n");
+    if(header_end==NULL){
+        return 0;
+    }
+    return header_end;
 
 }

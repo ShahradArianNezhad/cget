@@ -27,7 +27,6 @@ int main(int argc,char** argv){
         host = malloc(temp-argv[1]+1);
         strncpy(host,argv[1],temp-argv[1]);
         host[temp-argv[1]]='\0';
-        printf("%s",host);
 
         char* ptr = temp;
 
@@ -87,7 +86,7 @@ int main(int argc,char** argv){
         printf("SSL CONTEXT CREATION FAILED");
         return -5;
     }
-    char request[256];
+    char request[512];
     int request_len = snprintf(request,sizeof(request),
     "GET %s HTTP/1.1\r\n"
     "User-Agent: cdow/1.0\r\n"
@@ -147,8 +146,12 @@ int main(int argc,char** argv){
 
     http_res response;
     
-    if(handle_headers(HEADER_BUFFER,&response)==0){
+    char* ptr;
+    // ERROR HERE
+    if((ptr=handle_headers(HEADER_BUFFER,&response))==0){
         return 1;
+    }else{
+        write(filefd,ptr,bytes_recv-(HEADER_BUFFER-ptr));
     }
     if(response.http_status!=200){
         printf("ERROR: Server responded with non 200 response code : %d",response.http_status);
