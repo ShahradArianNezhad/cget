@@ -102,33 +102,35 @@ char* handle_headers(char* buff,http_res* res){
 
 
     window_start = strstr(buff,"Content-Type");
-    if(window_start==NULL){
-        printf("ERROR: Conent-Type header not found");
-        return 0;
-    }
-    while(*window_start!=' '){
+    if(window_start!=NULL){
+        while(*window_start!=' '){
         window_start++;
-    }
-    window_start++;
-    window_end = window_start;
-    while(*window_end!='\r'){
-        window_end++;
-    }
-
-    res->content_type = malloc(30*sizeof(char));
-    if(res->content_type==NULL){
+        }
+        window_start++;
+        window_end = window_start;
+        while(*window_end!='\r'){
+            window_end++;
+        }
+        res->content_type = malloc(20*sizeof(char));
+        if(res->content_type==NULL){
         printf("ERROR: memory allocation failed");
         return 0;
+        }
+        strncpy(res->content_type,window_start,window_end-window_start);
+        res->content_type[window_end-window_start+1]='\0';
+    }else{
+        res->content_type=NULL;
     }
+    
 
-    strncpy(res->content_type,window_start,window_end-window_start);
-    res->content_type[window_end-window_start+1]='\0';
+
+    
 
 
     char *header_end = strstr(buff,"\r\n\r\n");
     if(header_end==NULL){
         return 0;
     }
-    return header_end;
+    return header_end+4;
 
 }

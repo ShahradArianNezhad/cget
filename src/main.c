@@ -151,7 +151,7 @@ int main(int argc,char** argv){
     if((ptr=handle_headers(HEADER_BUFFER,&response))==0){
         return 1;
     }else{
-        write(filefd,ptr,bytes_recv-(HEADER_BUFFER-ptr));
+        write(filefd,ptr,bytes_recv-(ptr-HEADER_BUFFER));
     }
     if(response.http_status!=200){
         printf("ERROR: Server responded with non 200 response code : %d",response.http_status);
