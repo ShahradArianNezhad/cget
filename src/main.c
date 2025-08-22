@@ -8,17 +8,46 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include "../include/network.h"
-#define HEADER_BUFFER_SIZE 8192  
+#define HEADER_BUFFER_SIZE 8192
+#define BUFFER_SIZE 1048576
 #define PORT 443
 
 
 
 int main(int argc,char** argv){
 
-
-    if(argc<4){
+    char* file_name;
+    char* host;
+    char* path;
+    if(argc==2){
+        path= argv[2];
+        host = argv[1];
+        file_name = argv[2];
+        while(*file_name!='\0'){
+            file_name++;
+        }
+        while(*(file_name-1)!='/'){
+            file_name--;
+        }
+    }
+    else if(argc==3){
+        file_name = argv[2];
+        path= argv[2];
+        host = argv[1];
+        while(*file_name!='\0'){
+            file_name++;
+        }
+        while(*(file_name-1)!='/'){
+            file_name--;
+        }
+    }
+    else if(argc==4){
+        file_name =argv[3];
+        path= argv[2];
+        host = argv[1];
+    }else{
         printf("Incorrect usage:%s <hostname(WITHOUT www. OR HTTPS://)> <path> <outputfilename>\n",argv[0]);
-        return 0;
+        return 1;
     }
 
 
@@ -49,7 +78,7 @@ int main(int argc,char** argv){
     "Connection: close\r\n"
     // "Range: bytes=0-60\r\n"
     "\r\n",
-    argv[2],argv[1]);
+    path,host);
 
 
 
@@ -59,7 +88,7 @@ int main(int argc,char** argv){
         SSL_CTX_free(ctx);
         return -1;
     }
-    char* server_ip=getIp(argv[1]);
+    char* server_ip=getIp(host);
     if(!server_ip){
         printf("DNS RESOLOUTION FAILED: make sure you dont include http:// or www. in your hostname\n");
         return -2;
@@ -78,16 +107,16 @@ int main(int argc,char** argv){
 
     ssl = SSL_new(ctx);
     SSL_set_fd(ssl,socketfd);
-    SSL_set_tlsext_host_name(ssl, argv[1]);
+    SSL_set_tlsext_host_name(ssl, host);
     int status =SSL_connect(ssl);
     if(status<0){
         ERR_print_errors_fp(stderr);
     }
 
-    printf("Connected to %s with %s\n", argv[1], SSL_get_cipher(ssl));
+    printf("Connected to %s with %s\n", host, SSL_get_cipher(ssl));
 
 
-    // int fd = open(argv[3], O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    int filefd = open(file_name, O_WRONLY | O_CREAT | O_TRUNC, 0644);
 
 
     if(SSL_write(ssl,request,request_len)<0){
@@ -96,14 +125,30 @@ int main(int argc,char** argv){
     }
 
     int bytes_recv;
-    bytes_recv=SSL_read(ssl,HEADER_BUFFER,HEADER_BUFFER_SIZE-1);
-    HEADER_BUFFER[bytes_recv]='\0';
+    bytes_recv=SSL_read(ssl,HEADER_BUFFER,HEADER_BUFFER_SIZE);
 
     http_res response;
-    handle_headers(HEADER_BUFFER,&response);
-    printf("%d\n",response.content_len);
-    printf("%d\n",response.http_status);
-    printf("%s\n",response.content_type);
+    
+    if(handle_headers(HEADER_BUFFER,&response)==0){
+        return 1;
+    }
+    if(response.http_status!=200){
+        printf("ERROR: Server responded with non 200 response code : %d",response.http_status);
+        return 1;
+    }
+
+    // char* content = malloc(response.content_len*sizeof(char));
+
+
+    SSL_write(ssl,request,request_len);
+    char* BUFFER = malloc(BUFFER_SIZE);
+
+    while((bytes_recv=SSL_read(ssl,BUFFER,BUFFER_SIZE-1))>0){
+        write(filefd,BUFFER,bytes_recv);
+    }
+    
+
+
 
 
     SSL_shutdown(ssl);
