@@ -161,7 +161,7 @@ int main(int argc,char** argv){
     // SSL_write(ssl,request,request_len);
     char* BUFFER = malloc(BUFFER_SIZE);
 
-    while((bytes_recv=SSL_read(ssl,BUFFER,BUFFER_SIZE-1))>0){
+    while((bytes_recv=SSL_read(ssl,BUFFER,BUFFER_SIZE))>0){
         write(filefd,BUFFER,bytes_recv);
     }
     
