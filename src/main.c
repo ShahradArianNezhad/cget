@@ -46,24 +46,32 @@ int main(int argc,char** argv){
         while(*(file_name-1)!='/'){
             file_name--;
         }
-    }
-    else if(argc==3){
-        file_name = argv[2];
-        path= argv[2];
-        host = argv[1];
-        while(*file_name!='\0'){
-            file_name++;
+    }else if(argc==4){
+        if(*argv[2]=='-'&&*(argv[2]+1)=='o'){
+            char *temp = argv[1];
+            while(*temp!='/'){
+                temp++;
+            }
+            host = malloc(temp-argv[1]+1);
+            strncpy(host,argv[1],temp-argv[1]);
+            host[temp-argv[1]]='\0';
+
+            char* ptr = temp;
+
+            while(*ptr!='\0'){
+                ptr++;
+            }
+            path = malloc(ptr-temp+1);
+            strncpy(path,temp,ptr-temp);
+            path[ptr-temp]='\0';
+            file_name=argv[3];
+        }else{
+            printf("Incorrect usage:%s <hostname(WITHOUT www. OR HTTPS://)> [-o OUTPUT] \n",argv[0]);
+            return 1;
         }
-        while(*(file_name-1)!='/'){
-            file_name--;
-        }
-    }
-    else if(argc==4){
-        file_name =argv[3];
-        path= argv[2];
-        host = argv[1];
+
     }else{
-        printf("Incorrect usage:%s <hostname(WITHOUT www. OR HTTPS://)> <path> <outputfilename>\n",argv[0]);
+        printf("Incorrect usage:%s <hostname(WITHOUT www. OR HTTPS://)> [-o OUTPUT] \n",argv[0]);
         return 1;
     }
 
