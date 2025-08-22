@@ -155,10 +155,12 @@ int main(int argc,char** argv){
     http_res response;
     
     char* ptr;
-    // ERROR HERE
+    float total_bytes_recv=0.0;
+
     if((ptr=handle_headers(HEADER_BUFFER,&response))==0){
         return 1;
     }else{
+        total_bytes_recv+=bytes_recv-(ptr-HEADER_BUFFER);
         write(filefd,ptr,bytes_recv-(ptr-HEADER_BUFFER));
     }
     if(response.http_status!=200){
@@ -174,6 +176,8 @@ int main(int argc,char** argv){
 
     while((bytes_recv=SSL_read(ssl,BUFFER,BUFFER_SIZE))>0){
         write(filefd,BUFFER,bytes_recv);
+        total_bytes_recv+=bytes_recv;
+        printf("%.0f%% downloaded\n",(total_bytes_recv/response.content_len)*100);
     }
     
 
