@@ -20,9 +20,27 @@ int main(int argc,char** argv){
     char* host;
     char* path;
     if(argc==2){
-        path= argv[2];
-        host = argv[1];
-        file_name = argv[2];
+        char *temp = argv[1];
+        while(*temp!='/'){
+            temp++;
+        }
+        host = malloc(temp-argv[1]+1);
+        strncpy(host,argv[1],temp-argv[1]);
+        host[temp-argv[1]]='\0';
+        printf("%s",host);
+
+        char* ptr = temp;
+
+        while(*ptr!='\0'){
+            ptr++;
+        }
+        path = malloc(ptr-temp+1);
+        strncpy(path,temp,ptr-temp);
+        path[ptr-temp]='\0';
+
+
+
+        file_name = argv[1];
         while(*file_name!='\0'){
             file_name++;
         }
