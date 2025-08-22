@@ -3,4 +3,4 @@ SRC =$(wildcard src/*.c)
 LIBS = -lssl -lcrypto
 
 main:
-	clang $(CFLAGS) $(SRC) -o main $(LIBS) -ggdb
+	clang $(CFLAGS) $(SRC) -o main $(LIBS) -ggdb -o build/cget
