@@ -164,6 +164,7 @@ int main(int argc,char** argv){
     if((ptr=handle_headers(HEADER_BUFFER,&response))==0){
         return 1;
     }else if(response.http_status==200){
+        remove(file_name);
         filefd = fopen(file_name,"ab+");
         total_bytes_recv+=bytes_recv-(ptr-HEADER_BUFFER);
         fwrite(ptr,sizeof(char),bytes_recv-(ptr-HEADER_BUFFER),filefd);
