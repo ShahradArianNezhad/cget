@@ -163,12 +163,12 @@ int main(int argc,char** argv){
 
     if((ptr=handle_headers(HEADER_BUFFER,&response))==0){
         return 1;
-    }else{
+    }else if(response.http_status==200){
         filefd = fopen(file_name,"ab+");
         total_bytes_recv+=bytes_recv-(ptr-HEADER_BUFFER);
         fwrite(ptr,sizeof(char),bytes_recv-(ptr-HEADER_BUFFER),filefd);
     }
-    if(response.http_status!=200){
+    else{
         printf("ERROR: Server responded with non 200 response code : %d\n",response.http_status);
         return 1;
     }
@@ -179,10 +179,26 @@ int main(int argc,char** argv){
 
     // SSL_write(ssl,request,request_len);
     char* BUFFER = malloc(BUFFER_SIZE);
-
+    uint8_t counter=0;
     while((bytes_recv=SSL_read(ssl,BUFFER,BUFFER_SIZE))>0){
         fwrite(BUFFER,sizeof(char),bytes_recv,filefd);
+        total_bytes_recv+=bytes_recv;
+        if(total_bytes_recv/response.content_len*100>=counter*10){
+            counter++;
+            printf("[");
+            for(int i=0;i<counter-1;i++){
+                printf("**");
+            }
+            for(int i=0;i<=10-counter;i++){
+                printf("--");
+            }
+            printf("] ");
+            printf("%.0f%% downloaded\n",total_bytes_recv/response.content_len*100);
+            printf("\033[1A");
+            printf("\033[2K");
+        }
     }
+    printf("Downloaded %s\n",file_name);
 
     free(response.content_type);
     free(BUFFER);
