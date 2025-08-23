@@ -164,7 +164,38 @@ int main(int argc,char** argv){
     if((ptr=handle_headers(HEADER_BUFFER,&response))==0){
         return 1;
     }else if(response.http_status==200){
-        remove(file_name);
+        FILE* checker = fopen(file_name,"r");
+        if(checker!=NULL){
+            printf("a file with the name %s already exists do you want to overwrite it? (y/n)\n",file_name);
+            char* usrinp= malloc(50*sizeof(char));
+            scanf("%s",usrinp);
+            if(usrinp[0]=='y'){
+                printf("\033[2K");
+                printf("\033[1A");
+                printf("\033[2K");
+                printf("\033[1A");
+                printf("\033[2K");
+                remove(file_name);
+            }else if(usrinp[0]=='n'){
+                printf("\033[2K");
+                printf("\033[1A");
+                printf("\033[2K");
+                printf("\033[1A");
+                printf("\033[2K");
+                printf("enter a new filename to use\n");
+                scanf("%s",usrinp);
+                file_name=usrinp;
+                printf("\033[2K");
+                printf("\033[1A");
+                printf("\033[2K");
+                printf("\033[1A");
+                printf("\033[2K");
+            }else{
+                printf("input unrecognized quitting...\n");
+                return 1;
+            }
+        }
+        fclose(checker);
         filefd = fopen(file_name,"ab+");
         total_bytes_recv+=bytes_recv-(ptr-HEADER_BUFFER);
         fwrite(ptr,sizeof(char),bytes_recv-(ptr-HEADER_BUFFER),filefd);
