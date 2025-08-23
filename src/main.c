@@ -141,7 +141,7 @@ int main(int argc,char** argv){
     printf("Connected to %s with %s\n", host, SSL_get_cipher(ssl));
 
 
-    int filefd = open(file_name, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    FILE* filefd = fopen(file_name,"ab+");
 
 
     if(SSL_write(ssl,request,request_len)<0){
@@ -161,7 +161,7 @@ int main(int argc,char** argv){
         return 1;
     }else{
         total_bytes_recv+=bytes_recv-(ptr-HEADER_BUFFER);
-        write(filefd,ptr,bytes_recv-(ptr-HEADER_BUFFER));
+        fwrite(ptr,sizeof(char),bytes_recv-(ptr-HEADER_BUFFER),filefd);
     }
     if(response.http_status!=200){
         printf("ERROR: Server responded with non 200 response code : %d",response.http_status);
@@ -175,7 +175,7 @@ int main(int argc,char** argv){
     char* BUFFER = malloc(BUFFER_SIZE);
 
     while((bytes_recv=SSL_read(ssl,BUFFER,BUFFER_SIZE))>0){
-        write(filefd,BUFFER,bytes_recv);
+        fwrite(BUFFER,sizeof(char),bytes_recv,filefd);
         total_bytes_recv+=bytes_recv;
     }
     
@@ -187,6 +187,6 @@ int main(int argc,char** argv){
     SSL_free(ssl);
     close(socketfd);
     SSL_CTX_free(ctx);
-    close(filefd);
+    // close(filefd);
     return 0;
 }
