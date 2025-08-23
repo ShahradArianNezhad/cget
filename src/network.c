@@ -65,7 +65,7 @@ char* handle_headers(char* buff,http_res* res){
 
     window_start = strstr(buff,"HTTP");
     if(window_start==NULL){
-        printf("ERROR: HTTP header not found");
+        printf("ERROR: HTTP header not found\n");
         return 0;
     }
     while(*window_start!=' '){
@@ -84,7 +84,7 @@ char* handle_headers(char* buff,http_res* res){
 
     window_start = strstr(buff,"Content-Length");
     if(window_start==NULL){
-        printf("ERROR: Content-Lenght header not found");
+        printf("ERROR: Content-Lenght header not found\n");
         return 0;
     }
     while(*window_start!=' '){
@@ -113,7 +113,7 @@ char* handle_headers(char* buff,http_res* res){
         }
         res->content_type = malloc(20*sizeof(char));
         if(res->content_type==NULL){
-        printf("ERROR: memory allocation failed");
+        printf("ERROR: memory allocation failed\n");
         return 0;
         }
         strncpy(res->content_type,window_start,window_end-window_start);

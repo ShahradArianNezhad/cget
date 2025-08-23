@@ -9,7 +9,7 @@
 #include <openssl/err.h>
 #include "../include/network.h"
 #define HEADER_BUFFER_SIZE 8192
-#define BUFFER_SIZE 1048576*100
+#define BUFFER_SIZE 1048576
 #define PORT 443
 
 
@@ -20,13 +20,18 @@ int main(int argc,char** argv){
     char* host;
     char* path;
     if(argc==2){
-        char *temp = argv[1];
+        char* link = argv[1];
+        if(strstr(argv[1],"https://")!=NULL){
+            link+=8;
+        }
+
+        char *temp = link;
         while(*temp!='/'){
             temp++;
         }
-        host = malloc(temp-argv[1]+1);
-        strncpy(host,argv[1],temp-argv[1]);
-        host[temp-argv[1]]='\0';
+        host = malloc(temp-link+1);
+        strncpy(host,link,temp-link);
+        host[temp-link]='\0';
 
         char* ptr = temp;
 
@@ -39,7 +44,7 @@ int main(int argc,char** argv){
 
 
 
-        file_name = argv[1];
+        file_name = link;
         while(*file_name!='\0'){
             file_name++;
         }
@@ -66,7 +71,7 @@ int main(int argc,char** argv){
             path[ptr-temp]='\0';
             file_name=argv[3];
         }else{
-            printf("Incorrect usage:%s <hostname(WITHOUT www. OR HTTPS://)> [-o OUTPUT] \n",argv[0]);
+            printf("Incorrect usage:%s <hostname(WITHOUT www.)> [-o OUTPUT] \n",argv[0]);
             return 1;
         }
 
@@ -79,10 +84,9 @@ int main(int argc,char** argv){
     char *HEADER_BUFFER = malloc(HEADER_BUFFER_SIZE);
     HEADER_BUFFER[HEADER_BUFFER_SIZE-1]='\0';
     if(!HEADER_BUFFER){
-        printf("MEMORY ALLOCATION FAILED");
+        printf("MEMORY ALLOCATION FAILED\n");
         return -1;
     }
-
 
     struct sockaddr_in server_addr;
     int socketfd;
@@ -91,7 +95,7 @@ int main(int argc,char** argv){
 
     ctx = create_ssl_ctx();
     if(!ctx){
-        printf("SSL CONTEXT CREATION FAILED");
+        printf("SSL CONTEXT CREATION FAILED\n");
         return -5;
     }
     char request[512];
@@ -141,7 +145,6 @@ int main(int argc,char** argv){
     printf("Connected to %s with %s\n", host, SSL_get_cipher(ssl));
 
 
-    FILE* filefd = fopen(file_name,"ab+");
 
 
     if(SSL_write(ssl,request,request_len)<0){
@@ -156,17 +159,20 @@ int main(int argc,char** argv){
     
     char* ptr;
     float total_bytes_recv=0.0;
+    FILE* filefd;
 
     if((ptr=handle_headers(HEADER_BUFFER,&response))==0){
         return 1;
     }else{
+        filefd = fopen(file_name,"ab+");
         total_bytes_recv+=bytes_recv-(ptr-HEADER_BUFFER);
         fwrite(ptr,sizeof(char),bytes_recv-(ptr-HEADER_BUFFER),filefd);
     }
     if(response.http_status!=200){
-        printf("ERROR: Server responded with non 200 response code : %d",response.http_status);
+        printf("ERROR: Server responded with non 200 response code : %d\n",response.http_status);
         return 1;
     }
+    free(HEADER_BUFFER);
 
     // char* content = malloc(response.content_len*sizeof(char));
 
@@ -176,17 +182,16 @@ int main(int argc,char** argv){
 
     while((bytes_recv=SSL_read(ssl,BUFFER,BUFFER_SIZE))>0){
         fwrite(BUFFER,sizeof(char),bytes_recv,filefd);
-        total_bytes_recv+=bytes_recv;
     }
-    
 
-
-
-
+    free(response.content_type);
+    free(BUFFER);
+    free(host);
+    free(path);
     SSL_shutdown(ssl);
     SSL_free(ssl);
     close(socketfd);
     SSL_CTX_free(ctx);
-    // close(filefd);
+    fclose(filefd);
     return 0;
 }
