@@ -111,7 +111,7 @@ char* handle_headers(char* buff,http_res* res){
         while(*window_end!='\r'){
             window_end++;
         }
-        res->content_type = malloc(20*sizeof(char));
+        res->content_type = malloc(100*sizeof(char));
         if(res->content_type==NULL){
         printf("ERROR: memory allocation failed\n");
         return 0;

@@ -101,7 +101,7 @@ int main(int argc,char** argv){
     char request[512];
     int request_len = snprintf(request,sizeof(request),
     "GET %s HTTP/1.1\r\n"
-    "User-Agent: cdow/1.0\r\n"
+    "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36\r\n"
     "Accept: */*\r\n"
     "Host: %s\r\n"
     "Connection: close\r\n"
